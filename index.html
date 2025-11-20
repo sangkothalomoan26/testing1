@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voucher Internet Uni Brilink</title>
+  <link rel="icon" type="image/svg+xml" href="https://lucide.dev/icons/store.svg" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'navy-900': '#0A192F',
+            'navy-800': '#172A45',
+            'navy-700': '#303C55',
+            'gold-500': '#FFD700',
+            'gold-400': '#FFDE33',
+            'gold-600': '#E6C200',
+            'light-bg': '#F0F2F5',
+            'light-card': '#FFFFFF',
+            'dark-bg': '#0A192F',
+            'dark-card': '#172A45',
+          },
+          boxShadow: {
+            'soft-glow': '0 0 15px rgba(255, 215, 0, 0.3)',
+            'soft-glow-red': '0 0 15px rgba(255, 80, 80, 0.4)',
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide-react/dist/lucide-react.js"></script>
+  <script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  
+  <!-- PDF Generation Libraries -->
+  <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/jspdf-autotable@latest/dist/jspdf.plugin.autotable.js"></script>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "xlsx": "https://aistudiocdn.com/xlsx@^0.18.5",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/",
+    "date-fns": "https://aistudiocdn.com/date-fns@^4.1.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-light-bg dark:bg-dark-bg antialiased">
+  <div id="root"></div>
+  <script type="text/babel" data-type="module" src="/index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
