@@ -121,18 +121,24 @@ export const generateLedgerPdf = (ledger: AtmLedger, transactions: AtmTransactio
   doc.setFontSize(10);
   doc.text(`Tanggal: ${formatDate(ledger.date)}`, 105, 34, { align: 'center' });
 
-  // Balance Summary Table
-  const balanceBody = (balance: Balance) => [
-    ['BRI', formatCurrency(balance.bri)],
-    ['Mandiri', formatCurrency(balance.mandiri)],
-    ['DANA', formatCurrency(balance.dana)],
-    ['SavePlus', formatCurrency(balance.savePlus)],
-    ['Tunai (CASH)', formatCurrency(balance.cash)],
-    [{ content: 'TOTAL', styles: { fontStyle: 'bold' } }, { content: formatCurrency(Object.values(balance).reduce((a, b) => a + b, 0)), styles: { fontStyle: 'bold' } }],
-  ];
+  // Robust Y-position tracking
+  let currentY = 45;
 
+  // Balance Summary Table
+  const balanceBody = (balance: Balance) => {
+    if (!balance) return [];
+    return [
+      ['BRI', formatCurrency(balance.bri || 0)],
+      ['Mandiri', formatCurrency(balance.mandiri || 0)],
+      ['DANA', formatCurrency(balance.dana || 0)],
+      ['SavePlus', formatCurrency(balance.savePlus || 0)],
+      ['Tunai (CASH)', formatCurrency(balance.cash || 0)],
+      [{ content: 'TOTAL', styles: { fontStyle: 'bold' } }, { content: formatCurrency(Object.values(balance).reduce((a, b) => a + (Number(b) || 0), 0)), styles: { fontStyle: 'bold' } }],
+    ];
+  }
+  
   doc.autoTable({
-    startY: 45,
+    startY: currentY,
     head: [['Saldo Awal', 'Jumlah']],
     body: balanceBody(ledger.initialBalance),
     theme: 'grid',
@@ -140,8 +146,10 @@ export const generateLedgerPdf = (ledger: AtmLedger, transactions: AtmTransactio
     columnStyles: { 1: { halign: 'right' } },
   });
 
+  currentY = doc.autoTable.previous ? doc.autoTable.previous.finalY + 2 : currentY + 30;
+
   doc.autoTable({
-    startY: doc.autoTable.previous.finalY + 2,
+    startY: currentY,
     head: [['Saldo Akhir', 'Jumlah']],
     body: balanceBody(ledger.currentBalance),
     theme: 'grid',
@@ -149,29 +157,37 @@ export const generateLedgerPdf = (ledger: AtmLedger, transactions: AtmTransactio
     columnStyles: { 1: { halign: 'right' } },
   });
 
+  currentY = doc.autoTable.previous ? doc.autoTable.previous.finalY : currentY + 30;
+  
   // Transactions Table
-  doc.setFontSize(14);
-  doc.text('Rincian Transaksi', 14, doc.autoTable.previous.finalY + 15);
+  if (transactions && transactions.length > 0) {
+    doc.setFontSize(14);
+    doc.text('Rincian Transaksi', 14, currentY + 15);
+    currentY += 20;
 
-  const transactionBody = transactions.map(tx => [
-    formatTime(tx.timestamp),
-    tx.typeName,
-    formatCurrency(tx.amount),
-    formatCurrency(tx.agentAdmin),
-    tx.notes,
-  ]);
+    const transactionBody = transactions.map(tx => [
+      formatTime(tx.timestamp),
+      tx.typeName,
+      formatCurrency(tx.amount),
+      formatCurrency(tx.agentAdmin),
+      tx.notes || '-',
+    ]);
 
-  doc.autoTable({
-    startY: doc.autoTable.previous.finalY + 20,
-    head: [['Waktu', 'Jenis Transaksi', 'Nominal', 'Admin Agen', 'Catatan']],
-    body: transactionBody,
-    theme: 'striped',
-    headStyles: { fillColor: [30, 41, 59] },
-    columnStyles: {
-      2: { halign: 'right' },
-      3: { halign: 'right' },
-    },
-  });
+    doc.autoTable({
+      startY: currentY,
+      head: [['Waktu', 'Jenis Transaksi', 'Nominal', 'Admin Agen', 'Catatan']],
+      body: transactionBody,
+      theme: 'striped',
+      headStyles: { fillColor: [30, 41, 59] },
+      columnStyles: {
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+      },
+    });
+  } else {
+      doc.setFontSize(10);
+      doc.text('Tidak ada transaksi untuk sesi ini.', 14, currentY + 15);
+  }
 
   // Footer
   const pageCount = doc.internal.getNumberOfPages();
