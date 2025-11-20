@@ -7,13 +7,13 @@ import 'firebase/compat/firestore';
 // To use this, you must have a Firebase project with Firestore and Authentication (Email/Password) enabled.
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAOV-ykmgk8kl8QvRLXjvg8k4rRg8efTSE",
-  authDomain: "unibrilink-app.firebaseapp.com",
-  projectId: "unibrilink-app",
-  storageBucket: "unibrilink-app.firebasestorage.app",
-  messagingSenderId: "114284669090",
-  appId: "1:114284669090:web:b8a871fbf3afd26295cffb",
-  measurementId: "G-9NQE0SL234"
+  apiKey: "AIzaSyAJtReTcdyhm3knKVtLLEqh8T4ziKDzGQY",
+  authDomain: "projek1-12563.firebaseapp.com",
+  projectId: "projek1-12563",
+  storageBucket: "projek1-12563.firebasestorage.app",
+  messagingSenderId: "88628060192",
+  appId: "1:88628060192:web:87bd170c01eb9f503bdc45",
+  measurementId: "G-K85HBDX41T"
 };
 
 // Initialize Firebase
