@@ -11,7 +11,7 @@ interface State {
 }
 
 class ErrorBoundary extends Component<Props, State> {
-  // Fix: Initialize state as a class property to resolve component lifecycle errors with `this.state` and `this.props`.
+  // Fix: Initialize state as a class property to ensure `this` context is correctly set up.
   public state: State = {
     hasError: false,
     error: null,
@@ -26,6 +26,7 @@ class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // You can also log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
+    // Fix: `this.setState` is now available due to correct class setup.
     this.setState({ errorInfo });
   }
 
@@ -50,6 +51,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
+    // Fix: `this.props` is now available due to correct class setup.
     return this.props.children;
   }
 }
