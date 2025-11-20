@@ -44,8 +44,8 @@ export const CreateLedger: React.FC<CreateLedgerProps> = ({ createLedger, onCanc
     // Loading state will be handled by parent component
   };
 
-  // Fix: Add Number() to ensure values are treated as numbers and explicitly type accumulator `sum` to fix reduce type inference.
-  const totalBalance = Object.values(balances).reduce((sum: number, val) => sum + Number(val), 0);
+  // Fix: Explicitly type accumulator and value in reduce to prevent type inference errors with Object.values.
+  const totalBalance = Object.values(balances).reduce((sum: number, val: any) => sum + (Number(val) || 0), 0);
 
   return (
     <div className={`flex flex-col items-center justify-center text-center ${!isEditMode ? 'p-8 animate-fade-in' : ''}`}>

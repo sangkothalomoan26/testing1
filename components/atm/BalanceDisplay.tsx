@@ -18,8 +18,8 @@ const balanceConfig: { key: keyof Balance, label: string, icon: React.ReactNode 
 ];
 
 export const BalanceDisplay: React.FC<BalanceDisplayProps> = ({ title, balance, onEdit }) => {
-  // Fix: Add Number() to ensure values are treated as numbers and explicitly type accumulator `sum` to fix reduce type inference.
-  const totalBalance = Object.values(balance || {}).reduce((sum: number, val) => sum + Number(val), 0);
+  // Fix: Explicitly type accumulator and value in reduce to prevent type inference errors with Object.values.
+  const totalBalance = Object.values(balance || {}).reduce((sum: number, val: any) => sum + (Number(val) || 0), 0);
 
   return (
     <div className="bg-light-card dark:bg-dark-card p-4 md:p-6 rounded-xl shadow-lg border border-white/10">
@@ -31,23 +31,29 @@ export const BalanceDisplay: React.FC<BalanceDisplayProps> = ({ title, balance, 
           </button>
         )}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      
+      {/* Grid for individual balances */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         {balanceConfig.map(({ key, label, icon }) => (
-          <div key={key} className="bg-gray-50 dark:bg-navy-800 p-4 rounded-lg text-center">
+          <div key={key} className="bg-gray-50 dark:bg-navy-800 p-4 rounded-lg text-center transform hover:-translate-y-1 transition-transform duration-300">
             <div className="flex items-center justify-center gap-2 mb-1">
                 {icon}
                 <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300">{label}</h3>
             </div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(balance[key])}</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(balance[key] || 0)}</p>
           </div>
         ))}
-         <div className="bg-gold-500/10 dark:bg-gold-500/20 p-4 rounded-lg text-center col-span-2 md:col-span-3 lg:col-span-1 flex flex-col justify-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-                <CircleDollarSign size={24} className="text-gold-500" />
-                <h3 className="text-sm font-semibold text-gray-600 dark:text-gold-400">TOTAL</h3>
-            </div>
-            <p className="text-lg font-bold text-gray-900 dark:text-gold-400">{formatCurrency(totalBalance)}</p>
+      </div>
+
+      {/* Prominent Total Balance Card */}
+      <div className="bg-gradient-to-br from-navy-800 to-navy-900 text-white p-6 rounded-xl shadow-2xl flex items-center justify-between">
+          <div>
+              <div className="flex items-center gap-3">
+                  <CircleDollarSign size={32} className="text-gold-500"/>
+                  <h3 className="text-2xl font-bold text-gold-400">TOTAL</h3>
+              </div>
           </div>
+          <p className="text-4xl font-bold text-white tracking-tight">{formatCurrency(totalBalance)}</p>
       </div>
     </div>
   );
