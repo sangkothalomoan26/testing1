@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../common/Modal';
 import { AtmTransaction, TransactionRule, TransactionType, Balance, AtmLedger } from '../../types';
 import { formatNumberWithSeparators, parseFormattedNumber, formatCurrency } from '../../utils/helpers';
@@ -22,38 +23,49 @@ const balanceOptions: { key: keyof Balance, label: string }[] = [
     { key: 'cash', label: 'Tunai (CASH)' },
 ];
 
+const initialFormData = {
+    typeId: '',
+    amount: 0,
+    notes: '',
+    sourceAccount: 'bri' as keyof Balance,
+    destinationAccount: 'cash' as keyof Balance,
+    profitDestination: 'cash' as keyof Balance,
+};
+
 export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
     const { isOpen, onClose, activeLedger, editingTransaction, addTransaction, updateTransaction, transactionTypes, transactionRules } = props;
     
-    const [formData, setFormData] = useState({
-        typeId: '',
-        amount: 0,
-        notes: '',
-        sourceAccount: 'bri' as keyof Balance,
-        destinationAccount: 'cash' as keyof Balance,
-        profitDestination: 'cash' as keyof Balance,
-    });
+    const [formData, setFormData] = useState(initialFormData);
     const [bankAdmin, setBankAdmin] = useState<number>(0);
     const [agentAdmin, setAgentAdmin] = useState<number>(0);
     const [loading, setLoading] = useState(false);
     
     const isEditMode = !!editingTransaction;
 
-    useEffect(() => {
-        if (isEditMode) {
-            setFormData({
-                typeId: editingTransaction.typeId,
-                amount: editingTransaction.amount,
-                notes: editingTransaction.notes,
-                sourceAccount: editingTransaction.sourceAccount,
-                destinationAccount: editingTransaction.destinationAccount,
-                profitDestination: editingTransaction.profitDestination,
-            });
-        } else {
-             setFormData({ typeId: '', amount: 0, notes: '', sourceAccount: 'bri', destinationAccount: 'cash', profitDestination: 'cash' });
-        }
-    }, [editingTransaction, isOpen]);
+    const selectedType = useMemo(() => transactionTypes.find(t => t.id === formData.typeId), [formData.typeId, transactionTypes]);
 
+    useEffect(() => {
+        if (isOpen) {
+            if (isEditMode && editingTransaction) {
+                setFormData({
+                    typeId: editingTransaction.typeId,
+                    amount: editingTransaction.amount,
+                    notes: editingTransaction.notes,
+                    sourceAccount: editingTransaction.sourceAccount,
+                    destinationAccount: editingTransaction.destinationAccount,
+                    profitDestination: editingTransaction.profitDestination,
+                });
+                setBankAdmin(editingTransaction.bankAdmin);
+                setAgentAdmin(editingTransaction.agentAdmin);
+            } else {
+                setFormData(initialFormData);
+                setBankAdmin(0);
+                setAgentAdmin(0);
+            }
+        }
+    }, [editingTransaction, isOpen, isEditMode]);
+    
+    // Auto-calculate admin fees
     useEffect(() => {
         const { typeId, amount } = formData;
         if (!typeId || amount <= 0) {
@@ -70,17 +82,23 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
             setBankAdmin(applicableRule.bankAdmin);
             setAgentAdmin(applicableRule.agentAdmin);
         } else {
-            // If editing, keep original admin values if no rule matches
-            if (isEditMode && editingTransaction.typeId === typeId && editingTransaction.amount === amount) {
-                setBankAdmin(editingTransaction.bankAdmin);
-                setAgentAdmin(editingTransaction.agentAdmin);
-            } else {
-                setBankAdmin(0);
-                setAgentAdmin(0);
+             setBankAdmin(0);
+             setAgentAdmin(0);
+        }
+    }, [formData.typeId, formData.amount, transactionRules]);
+    
+    // Auto-determine source/destination based on transaction flow
+    useEffect(() => {
+        if (selectedType) {
+            if (selectedType.flow === 'CASH_OUT') { // Tarik Tunai
+                setFormData(prev => ({ ...prev, sourceAccount: 'cash' }));
+            } else { // Transfer, Bayar, dll.
+                setFormData(prev => ({ ...prev, destinationAccount: 'cash' }));
             }
         }
-    }, [formData.typeId, formData.amount, transactionRules, isEditMode, editingTransaction]);
-    
+    }, [selectedType]);
+
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -92,28 +110,24 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        const selectedType = transactionTypes.find(t => t.id === formData.typeId);
         if (!selectedType) {
             alert("Jenis transaksi tidak valid.");
             setLoading(false);
             return;
         }
 
+        const finalTransactionData = {
+            ...formData,
+            typeName: selectedType.name,
+            bankAdmin,
+            agentAdmin,
+        };
+
         try {
             if (isEditMode) {
-                 await updateTransaction(activeLedger.id, editingTransaction.id, {
-                     ...formData,
-                     typeName: selectedType.name,
-                     bankAdmin,
-                     agentAdmin,
-                 });
+                 await updateTransaction(activeLedger.id, editingTransaction.id, finalTransactionData);
             } else {
-                await addTransaction(activeLedger.id, {
-                    ...formData,
-                    typeName: selectedType.name,
-                    bankAdmin,
-                    agentAdmin,
-                });
+                await addTransaction(activeLedger.id, finalTransactionData);
             }
             onClose();
         } catch (error) {
@@ -123,8 +137,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
             setLoading(false);
         }
     };
-    
-    const selectedTypeFlow = transactionTypes.find(t => t.id === formData.typeId)?.flow;
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? 'Edit Transaksi' : 'Tambah Transaksi Baru'}>
@@ -143,11 +155,19 @@ export const TransactionForm: React.FC<TransactionFormProps> = (props) => {
                     <input name="amount" type="text" value={formatNumberWithSeparators(formData.amount)} onChange={handleChange} required className="w-full px-3 py-2 bg-gray-100 dark:bg-navy-800 border rounded-lg" />
                 </div>
 
-                {selectedTypeFlow && (
+                {selectedType && (
                      <div className="grid grid-cols-2 gap-4">
                          <div>
-                            <label className="block text-sm font-medium">{selectedTypeFlow === 'CASH_IN' ? 'Sumber Dana (Dari)' : 'Dana Masuk (Ke)'}</label>
-                            <select name={selectedTypeFlow === 'CASH_IN' ? 'sourceAccount' : 'destinationAccount'} value={selectedTypeFlow === 'CASH_IN' ? formData.sourceAccount : formData.destinationAccount} onChange={handleChange} required className="w-full px-3 py-2 bg-gray-100 dark:bg-navy-800 border rounded-lg">
+                            <label className="block text-sm font-medium">
+                                {selectedType.flow === 'CASH_IN' ? 'Sumber Dana (Dari Rek.)' : 'Dana Masuk (Ke Rek.)'}
+                            </label>
+                            <select 
+                                name={selectedType.flow === 'CASH_IN' ? 'sourceAccount' : 'destinationAccount'} 
+                                value={selectedType.flow === 'CASH_IN' ? formData.sourceAccount : formData.destinationAccount} 
+                                onChange={handleChange} 
+                                required 
+                                className="w-full px-3 py-2 bg-gray-100 dark:bg-navy-800 border rounded-lg"
+                            >
                                 {balanceOptions.filter(o => o.key !== 'cash').map(opt => <option key={opt.key} value={opt.key}>{opt.label}</option>)}
                             </select>
                         </div>
