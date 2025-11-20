@@ -64,7 +64,8 @@ const VoucherModule: React.FC<{ user: User; firestoreStore: ReturnType<typeof us
     const handleSuggestionClick = (suggestion: string) => { setVoucherFormData(prev => ({ ...prev, name: suggestion })); setVoucherNameSuggestions([]); };
     const handleVoucherFormSubmit = (e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); const finalData = { ...voucherFormData } as Voucher; upsertVoucher(finalData); addLog('EDIT', editingVoucher ? `Voucher "${finalData.name}" diperbarui.` : `Voucher "${finalData.name}" ditambahkan.`); addToast('success', `Voucher "${finalData.name}" berhasil ${editingVoucher ? 'diperbarui' : 'ditambahkan'}.`); setIsVoucherFormOpen(false); setVoucherNameSuggestions([]); };
     const handleAddProviderSubmit = async (e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); const name = (e.currentTarget.elements.namedItem('providerName') as HTMLInputElement).value; const logoUrl = (e.currentTarget.elements.namedItem('providerLogoUrl') as HTMLInputElement).value; 
-        const nextOriginalId = providers.length > 0 ? Math.max(...providers.map(p => Number(p.originalId))) + 1 : 1; 
+        // Fix: Use reduce to robustly find the maximum originalId and avoid type inference issues by explicitly typing parameters.
+        const nextOriginalId = providers.length > 0 ? providers.reduce((max: number, p: Provider) => Math.max(max, p.originalId), 0) + 1 : 1;
         await addProvider({ name, logoUrl: logoUrl || undefined, originalId: nextOriginalId }); 
         addToast('success', `Provider "${name}" berhasil ditambahkan.`); 
         setIsAddProviderModalOpen(false); 
